@@ -14,6 +14,8 @@ class StreakView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        print("Streak View")
+        print("Authenticated User:", request.user)
         # Last Streak
         last_streak = Streak.objects.filter(user=self.request.user).last()
 

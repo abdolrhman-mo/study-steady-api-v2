@@ -4,11 +4,11 @@ from django.contrib.auth.models import User
 from .serializers import RelationshipSerializer, UserSerializer, UserDetailsSerializer
 
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny,  IsAuthenticated
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
+from rest_framework.authtoken.models import Token
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -18,17 +18,35 @@ class UserListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     queryset = User.objects.all()[:50]
+
     
 class UserDetailView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserDetailsSerializer
     queryset = User.objects.all()
-    
+
 
 class RegisterView(CreateAPIView):
     permission_classes = [AllowAny]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # Generate Token instead of JWT
+            token, created = Token.objects.get_or_create(user=user)
+
+            return Response({
+                "message": "User created successfully",
+                "token": token.key,
+                "user_id": user.id
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -47,10 +65,12 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            refresh = RefreshToken.for_user(user)
+            # Get or create token for the user
+            token, created = Token.objects.get_or_create(user=user)
             return Response({
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
+                "message": "User loggedin successfully",
+                "token": token.key,
+                "user_id": user.id,
             })
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -115,5 +135,17 @@ class UserFollowStatsView(APIView):
                 "followers_count": user.followers_count(),
                 "following_count": user.following_count()
             }, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class CheckFollowStatusView(APIView):
+    """Check if the authenticated user is following a given user"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user_to_check = User.objects.get(id=user_id)
+            is_following = request.user.is_following(user_to_check)  # Using your signals.py function
+            return Response({"is_following": is_following}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
