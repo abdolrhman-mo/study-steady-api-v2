@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
-from .serializers import RelationshipSerializer, UserSerializer, UserDetailsSerializer
+from .serializers import RelationshipSerializer, RelationshipWithStreaksSerializer, UserSerializer, UserDetailsSerializer
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -122,6 +122,17 @@ class FollowingListView(APIView):
             user = User.objects.get(id=user_id)
             following = user.get_following()
             serializer = RelationshipSerializer(following, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class FollowingListStreaksView(APIView):
+    """Get users the current user is following"""
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            following = user.get_following()
+            serializer = RelationshipWithStreaksSerializer(following, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)

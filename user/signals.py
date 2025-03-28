@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from relationship.models import Relationship
+from streak.models import Streak
 
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -32,6 +33,7 @@ def get_followers(self):
 def get_following(self):
     """Get all users this user is following."""
     return Relationship.objects.filter(follower=self)
+
 
 def followers_count(self):
     return self.get_followers().count()

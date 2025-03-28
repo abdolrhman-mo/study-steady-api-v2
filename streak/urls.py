@@ -4,5 +4,5 @@ from .views import StreakView
 app_name = "streak"
 
 urlpatterns = [
-    path("", StreakView.as_view(), name="index"),
+    path('<int:user_id>/', StreakView.as_view(), name="index"),
 ]

@@ -70,6 +70,19 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,  # Disable session auth to avoid conflicts
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "Enter your token like this: Token <your_token>",
+        },
+    },
+}
+
+
 ROOT_URLCONF = 'studysteadydb.urls'
 
 TEMPLATES = [

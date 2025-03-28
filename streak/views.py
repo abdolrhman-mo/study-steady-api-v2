@@ -17,10 +17,10 @@ class StreakView(APIView):
         print("Streak View")
         print("Authenticated User:", request.user)
         # Last Streak
-        last_streak = Streak.objects.filter(user=self.request.user).last()
+        user_streaks = Streak.objects.filter(user=kwargs.get("user_id"))
+        last_streak = user_streaks.last()
 
         if last_streak:
-    
             current_streak = last_streak.number_of_days
 
             today = timezone.now().date()
@@ -37,7 +37,8 @@ class StreakView(APIView):
         Used .get("number_of_days__max", 0) 
         bcz Max function returns a dict instead of a direct integer
         """
-        top_streak = Streak.objects.aggregate(Max('number_of_days')).get("number_of_days__max", 0)
+        
+        top_streak = user_streaks.aggregate(Max('number_of_days')).get("number_of_days__max", 0) or 0
         
         serializer = StreakSerializer({ "current_streak": current_streak, "top_streak": top_streak })
         return Response(serializer.data)
